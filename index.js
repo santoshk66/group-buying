@@ -2,8 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
-// Restrict CORS to your Shopify store
-app.use(cors({ origin: 'https://your-shopify-store.myshopify.com' }));
+// Allow CORS for your Shopify store domain
+app.use(cors({ 
+  origin: ['https://grousale.com', 'https://your-shopify-store.myshopify.com'] // Add your Shopify myshopify.com domain as a fallback
+}));
 app.use(express.json());
 
 let groups = {}; // In-memory storage
@@ -14,16 +16,20 @@ const isGroupExpired = (group) => {
 };
 
 app.post("/createGroup", (req, res) => {
+  console.log('Received /createGroup request:', req.body); // Debug log
   const { productId, variantId, groupSize, discountPercentage, groupDuration } = req.body;
   
   // Input validation
   if (!productId || !variantId || !groupSize || !discountPercentage || !groupDuration) {
+    console.error('Missing required fields:', req.body);
     return res.status(400).json({ error: "Missing required fields" });
   }
   if (isNaN(groupSize) || isNaN(discountPercentage) || isNaN(groupDuration)) {
+    console.error('Invalid numeric values:', req.body);
     return res.status(400).json({ error: "Invalid numeric values" });
   }
   if (groupSize < 2 || groupSize > 10 || discountPercentage < 5 || discountPercentage > 50 || groupDuration < 6 || groupDuration > 72) {
+    console.error('Invalid field values:', req.body);
     return res.status(400).json({ error: "Invalid field values" });
   }
 
@@ -39,11 +45,13 @@ app.post("/createGroup", (req, res) => {
     createdAt: Date.now(),
     expiresAt: Date.now() + parseInt(groupDuration) * 3600000
   };
+  console.log('Group created:', groups[groupId]);
   res.json({ groupId, status: "active", expiresAt: groups[groupId].expiresAt });
 });
 
 app.get("/getGroup", (req, res) => {
   const { id } = req.query;
+  console.log('Received /getGroup request for ID:', id);
   if (!id) return res.status(400).json({ error: "Group ID is required" });
   if (!groups[id]) return res.status(404).json({ error: "Group not found" });
   
@@ -58,6 +66,7 @@ app.get("/getGroup", (req, res) => {
 app.post("/joinGroup", (req, res) => {
   const { id } = req.query;
   const { userId } = req.body;
+  console.log('Received /joinGroup request:', { id, userId });
 
   if (!id) return res.status(400).json({ error: "Group ID is required" });
   if (!userId) return res.status(400).json({ error: "User ID is required" });
@@ -86,6 +95,7 @@ app.post("/joinGroup", (req, res) => {
 
 app.post("/applyDiscount", (req, res) => {
   const { id } = req.query;
+  console.log('Received /applyDiscount request for ID:', id);
   if (!id) return res.status(400).json({ error: "Group ID is required" });
   if (!groups[id]) return res.status(404).json({ error: "Group not found" });
   
@@ -100,5 +110,5 @@ app.get("/", (req, res) => {
   res.send("✅ Grousale backend is live!");
 });
 
-const PORT = process.env.PORT || 10000; // Render default port
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
