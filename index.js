@@ -17,10 +17,10 @@ const isGroupExpired = (group) => {
 
 app.post("/createGroup", (req, res) => {
   console.log('Received /createGroup request:', req.body); // Debug log
-  const { productId, variantId, groupSize, discountPercentage, groupDuration } = req.body;
+  const { productId, variantId, groupSize, discountPercentage, groupDuration, productTitle } = req.body;
   
   // Input validation
-  if (!productId || !variantId || !groupSize || !discountPercentage || !groupDuration) {
+  if (!productId || !variantId || !groupSize || !discountPercentage || !groupDuration || !productTitle) {
     console.error('Missing required fields:', req.body);
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -40,6 +40,7 @@ app.post("/createGroup", (req, res) => {
     variantId,
     groupSize: parseInt(groupSize),
     discountPercentage: parseInt(discountPercentage),
+    productTitle, // Add productTitle to the group data
     members: [],
     status: "active",
     createdAt: Date.now(),
